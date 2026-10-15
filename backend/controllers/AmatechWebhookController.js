@@ -1,9 +1,16 @@
-import tca from "../config/tca";
+import tca from "../config/tca.js";
+import { createInvoiceFromFtaData } from "../services/createInvoiceFromFtaData.js";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const receiveTcaData = (req, res) => {
   const { token } = req.user;
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Token is not founded",
+    });
+  }
   const { event, invoice_id, invoice_name } = req.body || {};
 
   if (!invoice_id) {
@@ -15,10 +22,6 @@ const receiveTcaData = (req, res) => {
 
   if (event !== "invoice.received") {
     return res.status(201);
-    // .json({
-    //   success: true,
-    //   message: `Ignored event: ${event}`,
-    // });
   }
 
   console.log(
@@ -37,7 +40,6 @@ const receiveTcaData = (req, res) => {
         await sleep(3000);
 
         try {
-            
           console.log(
             `🔄 Fetching invoice ${invoice_id} (Attempt ${attempt})...`,
           );
@@ -61,13 +63,17 @@ const receiveTcaData = (req, res) => {
         return;
       }
 
-      console.log("✅ Successfully fetched invoice from TCA:", TcaInvoice.data.name);
+      console.log("✅ Successfully fetched invoice from TCA:", TcaInvoice.data);
 
       // Vendor
-    //   const vender = await mapOdooVender(TcaInvoice.detail.seller);
-    //   console.log("✅ Mapped Vendor:", vender);
-    //   const products = await mapOdooProduct(TcaInvoice.detail.lines);
-    //   console.log("✅ Mapped Products:", products);
+      //   const vender = await mapOdooVender(TcaInvoice.detail.seller);
+      //   console.log("✅ Mapped Vendor:", vender);
+      //   const products = await mapOdooProduct(TcaInvoice.detail.lines);
+      //   console.log("✅ Mapped Products:", products);
+      console.log("✅ Bill Creating:");
+      const bill = await createInvoiceFromFtaData(TcaInvoice.data);
+      console.log("✅: Bill Creation Completed");
+      console.log(bill);
     } catch (bgError) {
       console.error(
         "🔥 Background Webhook Processing Error:",
